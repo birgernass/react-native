@@ -6,9 +6,7 @@
  */
 
 #import "RCTFontUtils.h"
-
 #import <CoreText/CoreText.h>
-#import <React/RCTFont+Private.h>
 #import <React/RCTFont.h>
 
 #import <algorithm>
@@ -248,14 +246,7 @@ static NSArray *RCTFontFeatures(RCTFontVariant fontVariant)
   return fontFeatures;
 }
 
-static RCTDefaultFontResolver defaultFontResolver;
-
-void RCTSetDefaultFontResolver(RCTDefaultFontResolver handler)
-{
-  defaultFontResolver = handler;
-}
-
-static UIFont *RCTDefaultFontWithFontProperties(const RCTFontProperties &fontProperties)
+static UIFont *RCTDefaultFontWithFontProperties(RCTFontProperties fontProperties)
 {
   static NSCache *fontCache;
   static std::mutex fontCacheMutex;
@@ -270,24 +261,14 @@ static UIFont *RCTDefaultFontWithFontProperties(const RCTFontProperties &fontPro
 
   {
     std::lock_guard<std::mutex> lock(fontCacheMutex);
-    if (fontCache == nil) {
+    if (fontCache == nullptr) {
       fontCache = [NSCache new];
     }
     font = [fontCache objectForKey:cacheKey];
   }
 
-  if (font == nil) {
-    if (defaultFontResolver != nil) {
-      font = defaultFontResolver(fontProperties);
-    }
-
-    if (font == nil) {
-      font = RCTGetLegacyDefaultFont(effectiveFontSize, fontProperties.weight);
-    }
-
-    if (font == nil) {
-      font = [UIFont systemFontOfSize:effectiveFontSize weight:fontProperties.weight];
-    }
+  if (font == nullptr) {
+    font = [UIFont systemFontOfSize:effectiveFontSize weight:fontProperties.weight];
 
     BOOL isItalicFont = fontProperties.style == RCTFontStyleItalic;
     BOOL isCondensedFont = [fontProperties.family isEqualToString:@"SystemCondensed"];
@@ -385,7 +366,7 @@ UIFont *RCTFontWithFontProperties(RCTFontProperties fontProperties)
         }
       }
 
-      if (font == nil) {
+      if (font == nullptr) {
         // If we still don't have a match at least return the first font in the
         // fontFamily This is to support built-in font Zapfino and other custom
         // single font families like Impact
